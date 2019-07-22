@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pvjob
+  namespace: kube-ops
+spec:
+  template:
+    spec:
+      containers:
+      - name: bbox1
+        image: busybox
+        args:
+        - /bin/sh
+        - -c
+        - echo "hello pv" > /mydata/hello
+        volumeMounts:
+        - mountPath: "/mydata"
+          name: mydata
+      restartPolicy: Never
+      volumes:
+      - name: mydata
+        persistentVolumeClaim:
+          claimName: jenkins-pvc

@@ -1,0 +1,53 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: kube-ops
+  labels:
+    app: jenkins
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jenkins
+        tier: jenkins
+    spec:
+      containers:
+      - image: harbor.hitales.ai/cicd/jenkins-docker-kubectl:latest
+        imagePullPolicy: IfNotPresent
+        name: jenkins
+        securityContext:
+          privileged: true
+        ports:
+        - containerPort: 8080
+          name: jenkins
+        - containerPort: 50000
+          name: agent
+          protocol: TCP
+        volumeMounts:
+        - name: docker
+          mountPath: /var/run/docker.sock
+        - name: jenkins-persistent-storage
+          mountPath: /var/jenkins_home
+          subPath: jenkins
+        - name: kube-config
+          mountPath: /root/.kube/
+        - name: image-registry
+          mountPath: /root/.docker
+      volumes:
+      - name: docker
+        hostPath:
+          path: /var/run/docker.sock
+      - name: jenkins-persistent-storage
+        persistentVolumeClaim:
+          claimName: jenkins-pvc
+      - name: kube-config
+        configMap:
+          name: kube-configmap
+        #hostPath:
+        #  path: /root/.kube/
+      - name: image-registry
+        configMap:
+          name: image-registry-auth
